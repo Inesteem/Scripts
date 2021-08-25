@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+
+# Note: Install cronjob with sudo crontab -e
+# Add line: */2 * * * * su USERNAME -c "DISPLAY=:0.0  /usr/bin/python3 /usr/share/scripts/alert.py"; 
+
 import psutil
 import subprocess
 
@@ -31,6 +35,7 @@ def checkMem():
         root.after(60000, root.destroy)
         root.withdraw()
         messagebox.showwarning('memory usage increasing', "memory is used up for %.2f " % (usedMem) + "%")
+        
 if __name__ == "__main__":
     try:
         checkSwap()
