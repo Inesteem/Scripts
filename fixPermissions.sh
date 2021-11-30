@@ -21,6 +21,16 @@ while getopts 'd:s:a:q:' flag; do
   esac
 done
 
+function repair {
+  local fixPath="$1"
+  local cmpPath="$2"
+
+  local uid=$(stat -c '%u' ${cmpPath})
+  sudo chown ${uid} ${fixPath}
+
+  sudo chmod --reference="$cmpPath" "$fixPath"
+}
+
 function parse {
 
   local fix="$1"
@@ -35,7 +45,7 @@ function parse {
     local cmpPath="${cmp}/$d"
     if [[ -d ${fixPath} ]] && [[ -d ${cmpPath} ]]; then
       [ "${level}" = "${askLevel}" ] && echo "setting permissions of $fixPath to permissions of $cmpPath"
-      sudo chmod --reference="$cmpPath" "$fixPath"
+      repair "$fixPath" "$cmpPath"
 
       if [[ "${level}" = "${quitLevel}" ]]; then
         continue
@@ -50,7 +60,7 @@ function parse {
       fi
     elif [[ -f ${fixPath} ]] && [[ -f ${cmpPath} ]]; then
       [ "${level}" = "0" ] && echo "setting permissions of $fixPath to permissions of $cmpPath"
-      sudo chmod --reference="$cmpPath" "$fixPath"
+      repair "$fixPath" "$cmpPath"
     fi
   done
 }
