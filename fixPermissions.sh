@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 
 print_usage() {
@@ -8,10 +8,14 @@ print_usage() {
 
 fixDir=""
 cmpDir=""
-while getopts 'd:s:' flag; do
+askLevel=-1
+quitLevel=-1
+while getopts 'd:s:a:q:' flag; do
   case "${flag}" in
     d) fixDir="${OPTARG}" ;;
     s) cmpDir="${OPTARG}" ;;
+    a) askLevel="${OPTARG}" ;;
+    q) quitLevel="${OPTARG}" ;;
     *) print_usage
        exit 1 ;;
   esac
@@ -23,13 +27,27 @@ function parse {
   local cmp="$2"
   local level="$3"
 
-  for d in $(ls ${fix}); do
+  for d in $(ls -a ${fix}); do
+    if [[ "$d" = "." ]] || [[ "$d" = ".." ]]; then
+      continue;
+    fi
     local fixPath="${fix}/$d"
     local cmpPath="${cmp}/$d"
     if [[ -d ${fixPath} ]] && [[ -d ${cmpPath} ]]; then
-      [ "${level}" = "0" ] && echo "setting permissions of $fixPath to permissions of $cmpPath"
+      [ "${level}" = "${askLevel}" ] && echo "setting permissions of $fixPath to permissions of $cmpPath"
       sudo chmod --reference="$cmpPath" "$fixPath"
-      parse $fixPath $cmpPath 1
+
+      if [[ "${level}" = "${quitLevel}" ]]; then
+        continue
+      fi
+      if [[ "${level}" = "${askLevel}" ]]; then
+        read -p "Continue? (Y/N): " confirm
+        if [[ $confirm == [yY] ]] || [[ $confirm == [yY][eE][sS] ]]; then
+          parse $fixPath $cmpPath $((level+1))
+        fi
+      else
+          parse $fixPath $cmpPath $((level+1))
+      fi
     elif [[ -f ${fixPath} ]] && [[ -f ${cmpPath} ]]; then
       [ "${level}" = "0" ] && echo "setting permissions of $fixPath to permissions of $cmpPath"
       sudo chmod --reference="$cmpPath" "$fixPath"
